@@ -21,7 +21,7 @@ COOKIES_DEBUG = True
 # ITEM PIPELINES
 ITEM_PIPELINES = {
     "app.pipelines.AppPipeline": 300,
-    "app.pipelines.ImagesPipeline": 200
+    "scrapy.pipelines.images.ImagesPipeline": 200
 }
 IMAGES_STORE = str(imgp)
 # LOG SETTINGS
