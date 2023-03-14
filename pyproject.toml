@@ -30,7 +30,8 @@ dependencies = [
     "pillow >= 9.4.0",
     "tldextract >= 3.4.0",
     "importlib-metadata >= 4.2.0; python_version<'3.8'",
-    "importlib-resources >= 5.10.2; python_version<'3.9'"
+    "importlib-resources >= 5.10.2; python_version<'3.9'",
+    "scrapyd >= 1.4.1"
 ]
 [tool.setuptools.dynamic]
 version = {attr = "app.__version__"}
