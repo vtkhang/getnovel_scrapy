@@ -6,6 +6,7 @@
    useful for handling different item types with a single interface
 """
 
+import uuid
 import logging
 from pathlib import Path
 
@@ -22,8 +23,7 @@ class AppPipeline:
     def open_spider(self, spider):
         """Initialize attributes."""
         self.sp = Path(spider.settings["RESULT"])
-        if spider.rd is not None:
-            self.sp = spider.rd
+        self.sp = self.sp / spider.name / str(uuid.uuid5(spider.u, uuid.NAMESPACE_URL))
 
     def process_item(self, item, spider):
         """Store items to files.
@@ -61,8 +61,6 @@ class AppPipeline:
                 r.append(item["url"])
                 r.append(item["foreword"])
                 img = Path(spider.settings["IMAGES_STORE"]) / item["images"][0]["path"]
-                # Copy cover to result directory
-                # TODO: What if image wasn't downloaded
                 (self.sp / "cover.jpg").write_bytes(img.read_bytes())
                 (self.sp / "foreword.txt").write_text(data="\n".join(r), encoding="utf-8")
             elif isinstance(item, Chapter):

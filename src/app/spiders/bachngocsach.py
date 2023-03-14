@@ -35,7 +35,7 @@ class BachNgocSachSpider(Spider):
 
     name = "bachngocsach"
 
-    def __init__(self, u: str, start: int, stop: int, rd: str = None, *args, **kwargs):
+    def __init__(self, u: str, start: int, stop: int, *args, **kwargs):
         """Initialize attributes.
 
         Parameters
@@ -52,9 +52,6 @@ class BachNgocSachSpider(Spider):
         self.sa = int(start)
         self.so = int(stop)
         self.c = "vi"  # language code
-        self.rd = None
-        if rd is not None:
-            self.rd = Path(rd)
 
     def parse(self, res: Response, *args, **kwargs):
         """Extract info and send request to the table of content.
