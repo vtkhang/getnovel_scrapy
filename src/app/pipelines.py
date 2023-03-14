@@ -83,7 +83,13 @@ class SqlitePipeline:
 
     def open_spider(self, spider):
         """Initialize attributes."""
-        con = sqlite3.connect(spider.settings["SQLITE_DATABASE"])
+        self.con = sqlite3.connect(spider.settings["SQLITE_DATABASE"])
+        self.cur = self.con.cursor()
+    
+    def close_spider(self, spider):
+        """End process."""
+        self.con.commit()
+        self.con.close()
 
     def process_item(self, item, spider):
         """Store items to files.
