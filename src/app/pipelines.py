@@ -23,7 +23,9 @@ class AppPipeline:
     def open_spider(self, spider):
         """Initialize attributes."""
         self.sp = Path(spider.settings["RESULT"])
-        self.sp = self.sp / spider.name / str(uuid.uuid5(spider.u, uuid.NAMESPACE_URL))
+        rsn = str(uuid.uuid5(uuid.NAMESPACE_URL, spider.start_urls[0]))
+        self.sp: Path = self.sp / spider.name / rsn
+        self.sp.mkdir(exist_ok=True, parents=True)
 
     def process_item(self, item, spider):
         """Store items to files.
