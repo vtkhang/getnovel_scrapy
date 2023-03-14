@@ -4,7 +4,6 @@
    https://bachngocsach.com.vn/reader
 
 """
-from pathlib import Path
 
 from scrapy import Spider
 from scrapy.exceptions import CloseSpider
