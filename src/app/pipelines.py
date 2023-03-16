@@ -13,19 +13,25 @@ from pathlib import Path
 from scrapy.exceptions import DropItem
 
 from app.items import Info, Chapter
+from app.utils.sqlite import GetNovelDB
 
 _logger = logging.getLogger(__name__)
 
 
 class AppPipeline:
-    """Define App pipeline"""
+    """Define sqlite pipeline"""
 
     def open_spider(self, spider):
         """Initialize attributes."""
         self.sp = Path(spider.settings["RESULT"])
-        rsn = str(uuid.uuid5(uuid.NAMESPACE_URL, spider.start_urls[0]))
-        self.sp: Path = self.sp / spider.name / rsn
+        self.url_uuid = str(uuid.uuid5(uuid.NAMESPACE_URL, spider.start_urls[0]))
+        self.sp: Path = self.sp / spider.name / self.url_uuid
         self.sp.mkdir(exist_ok=True, parents=True)
+        self.db = GetNovelDB(Path(spider.settings["SQLITE_DATABASE"]))
+    
+    def close_spider(self, spider):
+        """End process."""
+        self.db.close()
 
     def process_item(self, item, spider):
         """Store items to files.
@@ -57,14 +63,20 @@ class AppPipeline:
                 raise DropItem(f"Field {k} is empty!")
         try:
             if isinstance(item, Info):
+                img = Path(spider.settings["IMAGES_STORE"]) / item["images"][0]["path"]
                 r.append(item["title"])
                 r.append(item["author"])
                 r.append(item["types"])
                 r.append(item["url"])
                 r.append(item["foreword"])
-                img = Path(spider.settings["IMAGES_STORE"]) / item["images"][0]["path"]
                 (self.sp / "cover.jpg").write_bytes(img.read_bytes())
                 (self.sp / "foreword.txt").write_text(data="\n".join(r), encoding="utf-8")
+                #SQLite
+                info = dict(item)
+                info["url_uuid"] = self.url_uuid
+                info["location"] = str(self.sp)
+                info["cover"] = str(img)
+                self.db.insert(info)
             elif isinstance(item, Chapter):
                 r.append(item["title"])
                 r.append(item["content"])

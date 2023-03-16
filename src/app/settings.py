@@ -12,6 +12,11 @@ result.mkdir(parents=True, exist_ok=True)
 lp = ap / "logs"
 lp.mkdir(parents=True, exist_ok=True)
 lnp = lp / f'{time.strftime("%Y_%m_%d-%H_%M_%S")}.log'
+# Sqlite Database
+sqlitep = ap / "database"
+sqlitep.mkdir(parents=True, exist_ok=True)
+sqlitenp = sqlitep / "getnovel.db"
+# SCRAPY
 BOT_NAME = r"GetNovel"
 ROBOTSTXT_OBEY = True
 SPIDER_MODULES = ["app.spiders"]
@@ -24,6 +29,10 @@ ITEM_PIPELINES = {
     "scrapy.pipelines.images.ImagesPipeline": 200
 }
 IMAGES_STORE = str(imgp)
+# Set settings whose default value is deprecated to a future-proof value
+REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
+TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
+FEED_EXPORT_ENCODING = "utf-8"
 # LOG SETTINGS
 LOG_FORMAT = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
 LOG_SHORT_NAMES = True
@@ -38,7 +47,5 @@ AUTOTHROTTLE_MAX_DELAY = 60
 AUTOTHROTTLE_TARGET_CONCURRENCY = 0.5
 # SAVE PATH
 RESULT = str(result)
-# Set settings whose default value is deprecated to a future-proof value
-REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
-TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
-FEED_EXPORT_ENCODING = "utf-8"
+#SQLITE DATABASE
+SQLITE_DATABASE = str(sqlitenp)
