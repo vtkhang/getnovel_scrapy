@@ -1,39 +1,40 @@
-"""Define your item pipelines here
+"""Define your item pipelines here.
 
-   Don't forget to add your pipeline to the ITEM_PIPELINES setting
-   See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
+Don't forget to add your pipeline to the ITEM_PIPELINES setting
+See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
-   useful for handling different item types with a single interface
+useful for handling different item types with a single interface
 """
 
-import uuid
 import logging
+from contextlib import suppress
 from pathlib import Path
+from shutil import copy
 
+from itemadapter import ItemAdapter
+from scrapy import Item, Spider
+from scrapy.crawler import Crawler
 from scrapy.exceptions import DropItem
+from scrapy.pipelines.images import ImagesPipeline
 
-from app.items import Info, Chapter
-from app.utils.sqlite import GetNovelDB
+from app.items import Chapter, Info
 
 _logger = logging.getLogger(__name__)
 
 
-class AppPipeline:
-    """Define sqlite pipeline"""
+class FilePipeline:
+    """Define App pipeline."""
 
-    def open_spider(self, spider):
-        """Initialize attributes."""
-        self.sp = Path(spider.settings["RESULT"])
-        self.url_uuid = str(uuid.uuid5(uuid.NAMESPACE_URL, spider.start_urls[0]))
-        self.sp: Path = self.sp / spider.name / self.url_uuid
-        self.sp.mkdir(exist_ok=True, parents=True)
-        self.db = GetNovelDB(Path(spider.settings["SQLITE_DATABASE"]))
-    
-    def close_spider(self, spider):
-        """End process."""
-        self.db.close()
+    def __init__(self: "FilePipeline", result_dir: str) -> None:
+        """Initialize."""
+        self.result_dir = result_dir
 
-    def process_item(self, item, spider):
+    @classmethod
+    def from_crawler(cls: "FilePipeline", crawler: Crawler) -> "FilePipeline":
+        """Access settings."""
+        return cls(result_dir=crawler.settings.get("RESULT"))
+
+    def process_item(self: "FilePipeline", item: Item, spider: Spider) -> Item:
         """Store items to files.
 
         Parameters
@@ -57,33 +58,52 @@ class AppPipeline:
         DropItem
             Invalid item detected.
         """
+        sp = self.result_dir
         r = []
-        for k in item.keys():
+        for k in item:
             if item.get(k) == "" or item.get(k) is None:
-                raise DropItem(f"Field {k} is empty!")
+                msg = f"Field {k} is empty!"
+                raise DropItem(msg)
         try:
             if isinstance(item, Info):
-                img = Path(spider.settings["IMAGES_STORE"]) / item["images"][0]["path"]
                 r.append(item["title"])
                 r.append(item["author"])
                 r.append(item["types"])
                 r.append(item["url"])
                 r.append(item["foreword"])
-                (self.sp / "cover.jpg").write_bytes(img.read_bytes())
-                (self.sp / "foreword.txt").write_text(data="\n".join(r), encoding="utf-8")
-                #SQLite
-                info = dict(item)
-                info["url_uuid"] = self.url_uuid
-                info["location"] = str(self.sp)
-                info["cover"] = str(img)
-                self.db.insert(info)
+                (sp / "foreword.txt").write_text(data="\n".join(r), encoding="utf-8")
             elif isinstance(item, Chapter):
                 r.append(item["title"])
                 r.append(item["content"])
-                (self.sp / f"{item['id']}.txt").write_text(data="\n".join(r), encoding="utf-8")
+                (sp / f"{item['index']}.txt").write_text(
+                    data="\n".join(r),
+                    encoding="utf-8",
+                )
             else:
-                raise DropItem("Invalid item detected!")
+                msg = "Invalid item detected!"
+                raise DropItem(msg)
         except KeyError as key:
-            _logger.warning(f"Error url: {item.get('url', 'Field url is not exist!')}")
-            raise DropItem(f"Field {key} is not exist!")
+            _logger.warning("Error url: %s", item.get("url", "Field url is not exist!"))
+            msg = f"Field {key} is not exist!"
+            raise DropItem(msg) from KeyError
+        return item
+
+
+class CoverImagesPipeline(ImagesPipeline):
+    """Define Image Pipeline."""
+
+    def item_completed(
+        self: "CoverImagesPipeline",
+        results: list,
+        item: Item,
+        info: ImagesPipeline.SpiderInfo,
+    ) -> Item:
+        """Overide default item_completed method."""
+        with suppress(KeyError):
+            img_store = Path(info.spider.settings["IMAGES_STORE"])
+            sp = Path(info.spider.settings["RESULT"])
+            for ok, x in results:
+                if ok:
+                    copy(img_store / x["path"], sp / "cover.jpg")
+            ItemAdapter(item)[self.images_result_field] = [x for ok, x in results if ok]
         return item

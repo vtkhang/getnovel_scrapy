@@ -1,21 +1,21 @@
-"""Define item loaders
+"""Define item loaders.
 
 .. _See documentation in:
    https://docs.scrapy.org/en/latest/topics/loaders.html
 
 """
 
-from itemloaders.processors import MapCompose, Join, Identity
+from itemloaders.processors import Identity, Join, MapCompose
 from scrapy.loader import ItemLoader
 
 
-def filter_blank(v):
-    if v:
-        return v
+def filter_blank(v: str | None) -> str | None:
+    """Remove blank lines."""
+    return v
 
 
 class InfoLoader(ItemLoader):
-    """Process info data
+    r"""Process info data.
 
     Examples
     --------
@@ -39,7 +39,7 @@ class InfoLoader(ItemLoader):
 
 
 class ChapterLoader(ItemLoader):
-    """Process chapter data
+    r"""Process chapter data.
 
     Examples
     --------
@@ -50,6 +50,7 @@ class ChapterLoader(ItemLoader):
         "content": "XpathResult1\\nXpathResult2\\n..."
     }
     """
+
     default_input_processor = MapCompose(str.strip, filter_blank)
     default_output_processor = Join()
     content_out = Join("\n")

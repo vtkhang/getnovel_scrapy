@@ -1,13 +1,15 @@
-# Define here the models for your scraped items
-#
-# See documentation in:
-# https://docs.scrapy.org/en/latest/topics/items.html
+"""Define here the models for your scraped items.
+
+.. _See documentation in:
+   https://docs.scrapy.org/en/latest/topics/items.html
+
+"""
 
 from scrapy import Field, Item
 
 
 class Info(Item):
-    """Store info"""
+    """Store info."""
 
     title = Field()
     author = Field()
@@ -19,8 +21,9 @@ class Info(Item):
 
 
 class Chapter(Item):
-    """Store chapter"""
-    id = Field()
+    """Store chapter."""
+
+    index = Field()
     url = Field()
     title = Field()
     content = Field()

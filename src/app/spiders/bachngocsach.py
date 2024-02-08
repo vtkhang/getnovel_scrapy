@@ -1,16 +1,18 @@
 """Get novel on domain bachngocsach.
 
-.. _Web site:
+.. _Website:
    https://bachngocsach.com.vn/reader
 
 """
 
+from collections.abc import Iterator
+
 from scrapy import Spider
 from scrapy.exceptions import CloseSpider
-from scrapy.http import Response, Request
+from scrapy.http import Request, Response
 
-from app.itemloaders import InfoLoader, ChapterLoader
-from app.items import Info, Chapter
+from app.itemloaders import ChapterLoader, InfoLoader
+from app.items import Chapter, Info
 
 
 class BachNgocSachSpider(Spider):
@@ -20,39 +22,36 @@ class BachNgocSachSpider(Spider):
     ----------
     name : str
         Name of the spider.
-    start_urls : list
-        List of url to start crawling from.
-    sa : int
-        The chapter index to start crawling.
-    so : int
-        The chapter index to stop crawling after that.
-    c : str
+    title_pos : int
+        Position of the title in the novel url.
+    lang : str
         Language code of novel.
-    rd : str
-        Result directory.
     """
 
     name = "bachngocsach"
+    title_pos = -1
+    lang = "vi"
 
-    def __init__(self, u: str, start: int, stop: int, *args, **kwargs):
+    def __init__(self: "BachNgocSachSpider", url: str, start: int, stop: int) -> None:
         """Initialize attributes.
 
         Parameters
         ----------
-        u : str
+        url : str
             Url of the novel information page.
         start: int
             Start crawling from this chapter.
         stop : int
             Stop crawling after this chapter, input -1 to get all chapters.
         """
-        super().__init__(*args, **kwargs)
-        self.start_urls = [u]
+        self.start_urls = [url]
         self.sa = int(start)
         self.so = int(stop)
-        self.c = "vi"  # language code
 
-    def parse(self, res: Response, *args, **kwargs):
+    def parse(
+        self: "BachNgocSachSpider",
+        res: Response,
+    ) -> Iterator[Info | Request]:
         """Extract info and send request to the table of content.
 
         Parameters
@@ -73,7 +72,10 @@ class BachNgocSachSpider(Spider):
             callback=self.parse_toc,
         )
 
-    def parse_toc(self, res: Response):
+    def parse_toc(
+        self: "BachNgocSachSpider",
+        res: Response,
+    ) -> Iterator[Request]:
         """Extract link of the start chapter.
 
         Parameters
@@ -88,11 +90,14 @@ class BachNgocSachSpider(Spider):
         """
         yield res.follow(
             url=res.xpath(f'(//*[@class="chuong-link"]/@href)[{self.sa}]').get(),
-            meta={"id": self.sa},
+            meta={"index": self.sa},
             callback=self.parse_content,
         )
 
-    def parse_content(self, res: Response):
+    def parse_content(
+        self: "BachNgocSachSpider",
+        res: Response,
+    ) -> Iterator[Request | Chapter]:
         """Extract content.
 
         Parameters
@@ -110,11 +115,11 @@ class BachNgocSachSpider(Spider):
         """
         yield get_content(res)
         neu = res.xpath('//a[contains(@class,"page-next")]/@href').get()
-        if (neu is None) or (res.meta["id"] == self.so):
+        if (neu is None) or (res.meta["index"] == self.so):
             raise CloseSpider(reason="done")
         yield res.follow(
             url=neu,
-            meta={"id": res.meta["id"] + 1},
+            meta={"index": res.meta["index"] + 1},
             callback=self.parse_content,
         )
 
@@ -138,7 +143,7 @@ def get_info(res: Response) -> Info:
     r.add_xpath("types", '//div[@id="theloai"]/a/text()')
     r.add_xpath("foreword", '//div[@id="gioithieu"]/div/p/text()')
     r.add_xpath("image_urls", '//div[@id="anhbia"]/img/@src')
-    r.add_value("url", res.request.url)
+    r.add_value("url", res.url)
     return r.load_item()
 
 
@@ -156,7 +161,7 @@ def get_content(res: Response) -> Chapter:
         Populated Chapter item.
     """
     r = ChapterLoader(item=Chapter(), response=res)
-    r.add_value("id", str(res.meta["id"]))
+    r.add_value("index", str(res.meta["index"]))
     r.add_value("url", res.url)
     r.add_xpath("title", '//h1[@id="chuong-title"]/text()')
     r.add_xpath("content", '//div[@id="noi-dung"]/p/text()')
