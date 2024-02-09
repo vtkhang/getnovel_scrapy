@@ -23,7 +23,7 @@ class InfoLoader(ItemLoader):
         "title": "XpathResult1 XpathResult2 ...",
         "author": "XpathResult1 XpathResult2 ...",
         "types": "XpathResult1, XpathResult2, ...",
-        "foreword": "XpathResult1\\nXpathResult2\\n...",
+        "foreword": [XpathResult1, XpathResult2,...],
         "url": "url_str"
         "image_urls": ["XpathResult1", "XpathResult2",...],
         "images": "AUTO_GENERATED_BY_IMAGEPIPLINE"
@@ -33,7 +33,7 @@ class InfoLoader(ItemLoader):
     default_input_processor = MapCompose(str.strip, filter_blank)
     default_output_processor = Join()
     types_out = Join(", ")
-    foreword_out = Join("\n")
+    foreword_out = Identity()
     image_urls_out = Identity()
     images_out = Identity()
 
@@ -47,10 +47,10 @@ class ChapterLoader(ItemLoader):
         "id": "1",
         "url": "url_str",
         "title": "XpathResult1 XpathResult2 ...",
-        "content": "XpathResult1\\nXpathResult2\\n..."
+        "content": [XpathResult1, XpathResult2,...]
     }
     """
 
     default_input_processor = MapCompose(str.strip, filter_blank)
     default_output_processor = Join()
-    content_out = Join("\n")
+    content_out = Identity()
