@@ -8,8 +8,8 @@ h = (Path.home() / BOT_NAME).resolve()
 ROBOTSTXT_OBEY = True
 SPIDER_MODULES = ["app.spiders"]
 ITEM_PIPELINES = {
-    "app.pipelines.FilePipeline": 1,
-    "app.pipelines.CoverImagesPipeline": 2,
+    "app.pipelines.Epub": 1,
+    "app.pipelines.CoverImage": 2,
 }
 i_dir = h / "images"
 i_dir.mkdir(parents=True, exist_ok=True)
